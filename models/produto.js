@@ -4,21 +4,21 @@ const Usuario = require('./usuario');
 
 const Produto = database.define('produto', {
     produtoId: {
-        type: DataTypes.INTEGER,
+        type: Sequelize.INTEGER,
         primaryKey: true,
         allowNull: false,
         autoIncrement: true,
       },
       nomeProduto: {
-        type: DataTypes.STRING,
+        type: Sequelize.STRING,
         allowNull: false,
       },
       valor: {
-        type: DataTypes.FLOAT,
+        type: Sequelize.DECIMAL,
         allowNull: false,
       },
       descricao: {
-        type: DataTypes.STRING,
+        type: Sequelize.STRING,
         allowNull: true,
       },
 });
