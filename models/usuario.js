@@ -1,6 +1,5 @@
 const Sequelize = require('sequelize');
 const database = require('../db');
-const Produto = require('./produto');
 
 const Usuario = database.define('usuario', {
     usuarioId: {
@@ -24,6 +23,11 @@ const Usuario = database.define('usuario', {
         type: Sequelize.STRING,
         allowNull: false,
       },
-});
+      produtoId:{
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      }
+    });
 
 module.exports = Usuario;

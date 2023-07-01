@@ -23,4 +23,13 @@ const Produto = database.define('produto', {
       },
 });
 
+Produto.belongsTo(Usuario, {
+    constraint: true,
+    foreignKey: 'usuarioId'
+})
+
+Usuario.hasMany(Produto, {
+    foreignKey: 'usuarioId'
+})
+
 module.exports = Produto;
