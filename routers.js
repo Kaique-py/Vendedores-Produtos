@@ -11,6 +11,19 @@ router.post('/cadastro-de-usuario', async (req, res) => {
   try{
     const { nomeUsuario, cpf, telefone, senha } = req.body;
     const usuario = await Usuario.create({ nomeUsuario, cpf, telefone, senha });
+    usuario.produtoId = null;
+    if (cpf == ""){
+    usuario.cpf = null;        
+    }
+    if (cpf == null){
+      usuario.cpf = null;        
+    }
+    if (telefone == ""){
+      usuario.telefone = null;        
+    }
+    if (telefone == null){
+      usuario.telefone = null;        
+    }
     await database.sync();
     res.json(usuario);
   } catch (error) {
@@ -31,6 +44,7 @@ router.post('/usuarios/:usuarioId/cadastro-de-produto/', async (req, res) => {
       return res.status(404).json( { message: 'Usuário não encontrado.' });
     }
     const produto = await Produto.create({ nomeProduto, valor, descricao });
+    produto.usuarioId = usuarioId
     await usuario.addProdutos(produto);
 
     await database.sync();
@@ -60,7 +74,7 @@ router.get('/usuarios', async (req, res) => { //ATENÇÃO AQUIIIII, ESSA PARTE P
 });
 
 //Buscar um usuário específico
-router.get('/usuarios/:id', async (req, res) => {
+router.get('/usuarios/:usuarioId', async (req, res) => {
   try{
     await database.sync();
     const { usuarioId } = req.params;
@@ -109,8 +123,6 @@ router.get('/usuarios/:usuarioId/produtos/:produtoId', async (req, res) => {
   }
 });
 
-//ATÉ AQUI FUNCIONA NORMAL, EM PRINCÍPIO!!!
-
 //Atualizar dados de um usuário
 router.put('/usuarios/:usuarioId', async (req, res) => {
   try {
@@ -124,17 +136,38 @@ router.put('/usuarios/:usuarioId', async (req, res) => {
     if (nomeUsuario){
       usuario.nomeUsuario = nomeUsuario;
     }
+    if (nomeUsuario == ""){
+      usuario.nomeUsuario = null;        
+    }
+    if (nomeUsuario == null){
+      usuario.nomeUsuario = null;        
+    }
     if (cpf){
       usuario.cpf = cpf;
+    }
+      if (cpf == ""){
+      usuario.cpf = null;        
+    }
+    if (cpf == null){
+      usuario.cpf = null;        
     }
     if (telefone){
       usuario.telefone = telefone;
     }
-    if (senha){
-      usuario.senha = senha;
+    if (telefone == ""){
+      usuario.telefone = null;        
     }
     if (telefone == null){
       usuario.telefone = null;        
+    }
+    if (senha){
+      usuario.senha = senha;
+    }
+    if (senha == ""){
+      usuario.senha = null;        
+    }
+    if (senha == null){
+      usuario.senha = null;        
     }
     await usuario.save();
     await database.sync();
@@ -146,34 +179,36 @@ router.put('/usuarios/:usuarioId', async (req, res) => {
 });
 
 //Atualizar dados de um produto de um usuário
-router.put('/usuarios/:usuarioId/produto/:id', async (req, res) => {
+router.put('/usuarios/:usuarioId/produtos/:produtoId', async (req, res) => {
   try {
     await database.sync();
-    const { usuarioId, idProduto } = req.params;
+    const { usuarioId, produtoId } = req.params;
     const { nomeProduto, valor, descricao } = req.body;
     const usuario = await Usuario.findByPk(usuarioId)
-    const produto = await Produto.findByPk(idProduto);
+    const produto = await Produto.findOne({where: { produtoId: produtoId, usuarioId: usuarioId } });
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
     if (!produto) {
       return res.status(404).json({ message: 'Produto não encontrado.' });
     }
+    const atualizacao = {};
     if (nomeProduto){
-      produto.nomeProduto = nomeProduto;
+      atualizacao.nomeProduto = nomeProduto;
     }
     if (valor){
-      produto.valor = valor;
+      atualizacao.valor = valor;
     }
     if (descricao){
-      produto.descricao = descricao;
+      atualizacao.descricao = descricao;
     }
     if (descricao == null){
-      produto.descricao = null;        
-    }
-    await produto.save();
+      atualizacao.descricao = null;        
+    }    
+    await Produto.update(atualizacao, { where: { produtoId: produtoId, usuarioId: usuarioId } });
+    const atualizado = await Produto.findOne({ where: { produtoId: produtoId, usuarioId: usuarioId } });
     await database.sync();
-    return res.json(produto);
+    return res.json(atualizado);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Erro ao atualizar o produto.' });
@@ -181,11 +216,11 @@ router.put('/usuarios/:usuarioId/produto/:id', async (req, res) => {
 });
 
 //Deletar um usuário
-router.delete('/usuarios/:id', async (req, res) => {
+router.delete('/usuarios/:usuarioId', async (req, res) => {
   try {
     await database.sync();
-    const { id } = req.params;
-    const usuario = await Usuario.findByPk(id);
+    const { usuarioId } = req.params;
+    const usuario = await Usuario.findByPk(usuarioId);
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
@@ -199,12 +234,12 @@ router.delete('/usuarios/:id', async (req, res) => {
 });
 
 //Deletar produto
-router.delete('/usuarios/:id/produtos/:id', async (req, res) => {
+router.delete('/usuarios/:usuarioId/produtos/:produtoId', async (req, res) => {
   try {
     await database.sync();
-    const { id, idProduto } = req.params;
-    const usuario = await Usuario.findByPk(id);
-    const produto = await usuario.getProdutos(idProduto);
+    const { usuarioId, produtoId } = req.params;
+    const usuario = await Usuario.findByPk(usuarioId);
+    const produto = await Produto.findOne({where: { produtoId: produtoId, usuarioId: usuarioId } });
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
@@ -220,30 +255,33 @@ router.delete('/usuarios/:id/produtos/:id', async (req, res) => {
   }
 });
 
+//ATÉ AQUI FUNCIONA PERFECTAMENTESSSS...
+
 //Realizar compra/venda de um produto
-router.delete('/vendas/:id', async (req, res) => {
-  try {
+router.put('/venda/:usuarioId/produtos/:produtoId', async (req, res) => {
+  try { //No campo acima usuarioId vamos inserir o id de quem está vendendo o produto.
     await database.sync();
-    const { id1, id2, idProduto } = req.params;
-    const vendedor = await Usuario.findByPk(id1);
-    const produto = await vendedor.getProdutos(idProduto);
-    if (!vendedor) {
+    const { usuarioId, produtoId } = req.params;
+    const { novoDonoId } = req.body; //Aqui, no campo da requisição será o id do comprador.
+    const usuario = await Usuario.findByPk(usuarioId)
+    const produto = await Produto.findOne({where: { produtoId: produtoId, usuarioId: usuarioId } });
+    if (!usuario) {
       return res.status(404).json({ message: 'Vendedor não encontrado.' });
     }
     if (!produto) {
       return res.status(404).json({ message: 'Produto não encontrado.' });
     }
-    const comprador = await Usuario.findByPk(id2);
-    if (!comprador) {
+    const novoDono = await Usuario.findByPk(novoDonoId)
+    if (!novoDono) {
       return res.status(404).json({ message: 'Comprador não encontrado.' });
     }
-    await comprador.addProduto(produto);  
-    await produto.destroy();
+    produto.usuarioId = novoDonoId;
+    await produto.save();
     await database.sync();
-    return res.json({ message: 'Venda realizada com sucesso.' });
+    return res.status(200).json( {message: "Venda realizada com sucesso."} );
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Erro ao realizar venda.' });
+    return res.status(500).json({ message: 'Erro ao atualizar o produto.' });
   }
 });
 
