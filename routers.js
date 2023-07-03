@@ -200,7 +200,7 @@ router.delete('/usuarios/:usuarioId', async (req, res) => {
 router.put('/usuarios/:usuarioId/comprar/:produtoId', async (req, res) => {
   try {
     const { usuarioId, produtoId } = req.params;
-    const { fornecedorId } = req.body;
+    const { fornecedorId } = req.body; //Id DE QUEM esse usuário está comprando o produto.
     const usuario = await Usuario.findByPk(usuarioId);
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
@@ -217,7 +217,7 @@ router.put('/usuarios/:usuarioId/comprar/:produtoId', async (req, res) => {
 router.put('/usuarios/:usuarioId/vender/:produtoId', async (req, res) => {
   try {
     const { usuarioId, produtoId } = req.params;
-    const { compradorId } = req.body;
+    const { compradorId } = req.body; //Id do usuário PARA QUEM está sendo vendido esse produto.
     const usuario = await Usuario.findByPk(usuarioId);
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
@@ -261,6 +261,5 @@ router.delete('/usuarios/:usuarioId/descartar/:produtoId', async (req, res) => {
     return res.status(500).json({ message: 'Erro ao descartar o produto.' });
   }
 });
-
 
 module.exports = router;
