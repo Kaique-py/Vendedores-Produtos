@@ -79,10 +79,30 @@ router.get('/usuarios/:usuarioId', async (req, res) => {
     await database.sync();
     const { usuarioId } = req.params;
     const usuario = await Usuario.findByPk(usuarioId);
+    if (!usuario){
+      return res.status(404).json( { message: 'Usuário não encontrado.' });
+    }
     res.json(usuario);
   } catch (error) {
       console.error(error);
       return res.status(500).json({ message: 'Erro ao buscar usuário.' });
+  }
+});
+
+// Rota para exibir os produtos do usuário
+router.get('/usuarios/:usuarioId/produtos', async (req, res) => {
+  try{
+    await database.sync();
+    const { usuarioId } = req.params;
+    const usuario = await Usuario.findByPk(usuarioId)
+    if (!usuario){
+      return res.status(404).json( { message: 'Usuário não encontrado.' });
+    }
+    const produto = await usuario.getProdutos();
+    res.json(produto);
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Erro ao buscar os produtos deste usuário.' });
   }
 });
 
@@ -199,13 +219,27 @@ router.delete('/usuarios/:usuarioId', async (req, res) => {
 // Rota para compra de um produto
 router.put('/usuarios/:usuarioId/comprar/:produtoId', async (req, res) => {
   try {
+    await database.sync()
     const { usuarioId, produtoId } = req.params;
     const { fornecedorId } = req.body; //Id DE QUEM esse usuário está comprando o produto.
     const usuario = await Usuario.findByPk(usuarioId);
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
-    const produto = await usuario.comprarProduto(produtoId, fornecedorId);
+    const produto = await Produto.findByPk(produtoId);
+    if (!produto) {
+      return res.status(404).json({ message: 'Produto não encontrado.' });
+    }
+    const fornecedor = await Usuario.findByPk(fornecedorId);
+    if (!fornecedor) {
+      return res.status(404).json({ message: 'Fornecedor não encontrado.' });
+    }
+    if (produto.usuarioId !== fornecedor.usuarioId) {
+      return res.status(404).json({ message: 'Produto não pertence a esse fornecedor.' });
+    }
+    produto.usuarioId = usuarioId;
+    await produto.save();
+    await database.sync()
     return res.json(produto);
   } catch (error) {
     console.error(error);
@@ -216,13 +250,27 @@ router.put('/usuarios/:usuarioId/comprar/:produtoId', async (req, res) => {
 // Rota para venda de um produto
 router.put('/usuarios/:usuarioId/vender/:produtoId', async (req, res) => {
   try {
+    await database.sync()
     const { usuarioId, produtoId } = req.params;
     const { compradorId } = req.body; //Id do usuário PARA QUEM está sendo vendido esse produto.
     const usuario = await Usuario.findByPk(usuarioId);
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
-    const produto = await usuario.venderProduto(produtoId, compradorId);
+    const produto = await Produto.findByPk(produtoId);
+    if (!produto) {
+      return res.status(404).json({ message: 'Produto não encontrado.' });
+    }
+    if (produto.usuarioId !== parseInt(usuarioId)) {
+      return res.status(404).json({ message: 'Produto não pertence a esse usuário.' });
+    }
+    const comprador = await Usuario.findByPk(compradorId)
+    if (!comprador) {
+      return res.status(404).json({ message: 'Comprador não encontrado.' });
+    }
+    produto.usuarioId = comprador.usuarioId;
+    await produto.save();
+    await database.sync()
     return res.json(produto);
   } catch (error) {
     console.error(error);
@@ -230,31 +278,24 @@ router.put('/usuarios/:usuarioId/vender/:produtoId', async (req, res) => {
   }
 });
 
-// Rota para exibir os produtos do usuário
-router.get('/usuarios/:usuarioId/produtos', async (req, res) => {
-  try {
-    const { usuarioId } = req.params;
-    const usuario = await Usuario.findByPk(usuarioId);
-    if (!usuario) {
-      return res.status(404).json({ message: 'Usuário não encontrado.' });
-    }
-    const produtos = await usuario.mostrarProdutos();
-    return res.json(produtos);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Erro ao exibir os produtos do usuário.' });
-  }
-});
-
 // Rota para descartar um produto pelo usuário
 router.delete('/usuarios/:usuarioId/descartar/:produtoId', async (req, res) => {
   try {
+    await database.sync()
     const { usuarioId, produtoId } = req.params;
     const usuario = await Usuario.findByPk(usuarioId);
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
-    const produto = await usuario.descartarProduto(produtoId);
+    const produto = await Produto.findByPk(produtoId);
+    if (!produto) {
+      return res.status(404).json({ message: 'Produto não encontrado.' });
+    }
+    if (produto.usuarioId !== parseInt(usuarioId)) {
+      return res.status(404).json({ message: 'Produto não pertence a esse usuário.' });
+    }
+    await produto.destroy();
+    await database.sync()
     return res.json(produto);
   } catch (error) {
     console.error(error);
